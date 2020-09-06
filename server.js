@@ -13,16 +13,16 @@ const server = dgram.createSocket('udp4');
 
 
 var client  = new Object;
-client={ptr: 0,num: 0};
+client={ptr: dgram.createSocket('udp4'),num: 0};
 var clients = new Array;
-clients[0].ptr=dgram.createSocket('udp4');//open for future. time-economy
+clients[0]= client;//open for future. time-economy
 
 
 //var clients[0] = dgram.createSocket('udp4'); 
 const fs = require("fs");
 
 ///////////////////////my variables
-cliets
+//cliets
 var indtcnt =0;
 var flag2stop =0 ;
 var statemove_el = 0;
