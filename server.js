@@ -93,30 +93,37 @@ function createinfo(max,port,num,pattern,address) {
   var cnt=0;
   if (max) cnt=0; else cnt=-1;  
   var p=new Array;
-  while (cnt<max){
-    p[i] = new Promise(function(resolve,reject){
-      var outmsg=new Buffer.from("\x7f"+"1234"+"\x7e");//size=6    
-      outmsg[0] = 0x7e;
-      outmsg[1] = (i &0xff000000)>>24;
-      outmsg[2] = (i &0xff0000)>>16;
-      outmsg[3] = (i &0xff00)>>8;
-      outmsg[4] = (i &0xff);
-      outmsg[outmsg.length-1] = 0x7f;        
+  i=0;
+  var prtmp= new Promise(function(resolve,reect){
+    while (cnt<max){
+      p[i] = new Promise(function(resolve,reject){
+        var outmsg=new Buffer.from("\x7f"+"1234"+"\x7e");//size=6    
+        outmsg[0] = 0x7e;
+        outmsg[1] = (i &0xff000000)>>24;
+        outmsg[2] = (i &0xff0000)>>16;
+        outmsg[3] = (i &0xff00)>>8;
+        outmsg[4] = (i &0xff);
+        outmsg[outmsg.length-1] = 0x7f;        
 //      console.log("---- n="+i+" "+ hexdump(outmsg));
-      resolve(outmsg);
-      reject("reject");
-    })
-    p[i].then((fulfilled) => {
-      clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port,) 
-      clients[lastidx].cnt++; 
-    });
-    if (max) cnt++;
-    i++;
-    if (stopflag[num]) cnt=max+1; 
-  }; // end loop
-  consolelog(">> sendeded" +clients[lastidx].cnt + " dgrams @N:"+ clients[lastidx].num +" ");
-  clients[lastidx].num=clients[lastidx].ptrn=clients[lastidx].cnt=0; //clear obj
-  clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0};   
+        resolve(outmsg);
+        reject("---- ERROR");
+      })
+      p[i].then((fulfilled) => {
+        clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port) 
+        clients[lastidx].cnt++; 
+      });
+      if (max) cnt++;
+      i++;
+      if (stopflag[num]) cnt=max+1; 
+    }; // end loop
+    resolve(i);
+    reject('--- ERROR MP');
+  });
+  prtmp.then((fulfilled) => {
+    consolelog(">> sendeded "+ clients[lastidx].cnt + " dgrams @N:"+ clients[lastidx].num +" ");
+    clients[lastidx].num=clients[lastidx].ptrn=clients[lastidx].cnt=0; //clear obj
+    clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0};   
+  });
   return 0;    
 }//end function createinfo()
 
