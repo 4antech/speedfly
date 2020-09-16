@@ -54,11 +54,12 @@ myserver.on('listening', function () {
 });
 
 myserver.on('message', function (message, remote){
+  var address = myserver.address();
   tmp++;
   if (tmp<=max) {
     consolelog("tmp="+(tmp)+' n='+((message[1]<<8)+message[2])+" "+ hexdump(message));
   } 
-  if (tmp>=max) myserver.close(()=>{consolelog(tmp+" datagrams recived");});
+  if (tmp>=max) myserver.close(()=>{consolelog(tmp+" datagrams recived on port:"+address.port);});
 });
 
 

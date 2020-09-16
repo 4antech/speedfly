@@ -1,15 +1,16 @@
 /// UDP server bistrolet    ///////////////////////
 const version=200904.1;
-const debug=1;
+const debug=3;
 const SERVERPORT = 9090;
 const pi=Math.PI;
 const pi2=Math.PI*2;
 const pina2=Math.PI/2;
 const r2g=180/Math.PI;
-const SERVERHOST='0.0.0.0';
+const SERVERHOST='192.162.132.124';
 //var HOST='192.162.132.124'; // pumps
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
+///////////////////
 const EventEmitter = require('events');
 class MyEmitter extends EventEmitter {}
 const myEmitter = new MyEmitter();
@@ -17,6 +18,7 @@ const infostream =  new MyEmitter();
 myEmitter.on('cmd', (cmd) => {
   console.log('an event occurred!');
 });  ////myEmitter.emit('cmd');
+/////////////////
 var stopflag=new Array;
 var clients = new Array;
 var newclient  = new Object;
@@ -36,7 +38,7 @@ var  AZ_SOFTLIMIT_CW   = 10; // 180
 var  AZ_SOFTLIMIT_CCW  = 20; // 0
 var  EL_SOFTLIMIT_UP   = 30; // 88
 var  EL_SOFTLIMIT_DOWN = 40; // 5
-var  AZ_OFFSET = 0;   //  <---+______TODO: initfunction. 
+var  AZ_OFFSET = 0;   //  <---+______ TODO: initfunction. 
 var  EL_OFFSET = 0;   //  <---+
 //END TODO---------------------------
 ///////////////////////////////////////////////////////
@@ -79,7 +81,7 @@ function validation(message){
 function getxy(){return Math.sqrt(ts.getTime);};
 
 function createinfo(max,port,num,pattern,address) {
-  consolelog("trying create streem @ max : "+ max + " port: "+ port +
+  consolelog("+ trying create streem @ max :"+ max + "  IP:port : "+ address+":"+port +
     " numb: "+ num + " ptrn: "+ pattern );
   var i=0;
   for (i=0;i<clients.length;i++) if (clients[i].num==num) {
@@ -89,6 +91,7 @@ function createinfo(max,port,num,pattern,address) {
   clients[0].num=num; 
   var lastidx=clients.length;
   clients[lastidx]=clients[0]; //create new array element
+
   var msgbuf=new Buffer.from("\x7f"+"1234"+"\x7e");//size=6    
   var cnt=0;
   if (max) cnt=0; else cnt=-1;  
@@ -109,7 +112,18 @@ function createinfo(max,port,num,pattern,address) {
         reject("---- ERROR");
       })
       p[i].then((fulfilled) => {
-        clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port) 
+
+/*
+  myclient.send(message, 0, 9, OPU_SERVER_PORT, OPU_SERVER_HOST, function(err, bytes) {
+    //after sending message:
+    if (err) throw err;
+    ts = new Date();
+    consolelog('* Start command. Open new infostreeam ');
+    consolelog('> SND UDP client message [' +hexdump(message)+ '] sent to ' + OPU_SERVER_HOST +':'+ OPU_SERVER_PORT);
+  });
+*/
+
+        clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port, address, () => consolelog(">> ["+hexdump(fulfilled)+"] "+address+":"+port + " ") ) 
         clients[lastidx].cnt++; 
       });
       if (max) cnt++;
@@ -120,22 +134,25 @@ function createinfo(max,port,num,pattern,address) {
     reject('--- ERROR MP');
   });
   prtmp.then((fulfilled) => {
-    consolelog(">> sendeded "+ clients[lastidx].cnt + " dgrams @N:"+ clients[lastidx].num +" ");
+//   var tmpsock = clients[lastidx].ptr;
+//   var tmpadrr =tmpsock.address();
+    consolelog(">> sendeded "+ clients[lastidx].cnt + "("+fulfilled+") dgrams @N:" + clients[lastidx].num + " adr:" );
     clients[lastidx].num=clients[lastidx].ptrn=clients[lastidx].cnt=0; //clear obj
-    clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0};   
+    clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0}//create new
   });
-  return 0;    
+  return 0;
 }//end function createinfo()
 
 function startcommand(msg,sender){
+  consolelog("+ starter-function:start command "+hexdump(msg)+" Sender address: " +sender);
   if (msg[2]==0) {
-    if (!createinfo(msg[4],(msg[6]+(msg[5]<<8)),msg[3],msg[7],sender.address)){ 
-    consolelog('* command '+ msg[2]+' strted');
+    if (!createinfo(msg[4],(msg[6]+(msg[5]<<8)),msg[3],msg[7],sender)){ 
+    consolelog('* command '+ msg[2]+' strted. sender adress:' + sender);
     }
     else consolelog("! error create stream!");
   }
-  else consolelog(
-  '* command of movement temporary not available ');
+  else consolelog('* command of movement temporary not available ');
+
 };
 ///////////////////////server function
 server.on('error', function (err){
@@ -148,7 +165,7 @@ server.on('listening', function () {
   consolelog('* Start UDP Server listening on ' + 
   address.address + ":" + 
   address.port)+ 
-  " Without full validation! (on some time) becose under construction...";
+  " Without full validation! (on some time) becose under construction..."; 
 });
 server.on('message', function (message, remote) {
   var msglog='';
@@ -174,7 +191,7 @@ server.on('message', function (message, remote) {
     "]" + " packet N=" +dtnum  );        //bad incoming packet
   else if (validstatus==0)  {
     msglog=('* CMD Ok [' + command + ']' + " packet N=" +dtnum  ); //pck&arg Ok!   
-    startcommand(message,remote);    //   Synhro              <--------------------starter
+    startcommand(message,remote.address);    //   Synhro              <--------------------starter
 // myEmitter.emit('cmd');     // asynchro
   };
   consolelog(msglog +' from ' + remote.address + ':' + remote.port);
