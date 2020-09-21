@@ -11,8 +11,8 @@ function consolelog(msg){
 }
 
 var OPU_SERVER_PORT = 9090; // PORT -- 4 connect 2 OPU-SERVER
-var OPU_SERVER_HOST='192.162.132.124';//  PORT -- 4 connect 2 OPU-SERVER
-//var OPU_SERVER_HOST='127.0.0.1';//  PORT -- 4 connect 2 OPU-SERVER
+//var OPU_SERVER_HOST='192.162.132.124';//  PORT -- 4 connect 2 OPU-SERVER
+var OPU_SERVER_HOST='127.0.0.1';//  PORT -- 4 connect 2 OPU-SERVER
 //var OPU_SERVER_HOST='178.158.224.123'; //  PORT -- 4 connect 2 OPU-SERVER
 
 
@@ -27,9 +27,10 @@ var ts = new Date();
 
 var packn = 1;
 var cmd = 0; // 0..11
-var max = 10;
+var max = 0;
 var pattern = 1;
 var tmp=0;
+var tmp0=0;
 
 function hexdump(msg){  
   var tmpstr='.';
@@ -55,11 +56,11 @@ myserver.on('listening', function () {
 
 myserver.on('message', function (message, remote){
   var address = myserver.address();
-  tmp++;
+  if (max) tmp++; else tmp0++;
   if (tmp<=max) {
-    consolelog("tmp="+(tmp)+' n='+((message[1]<<8)+message[2])+" "+ hexdump(message));
+    consolelog("tmp="+tmp0+" "+ hexdump(message));
   } 
-  if (tmp>=max) myserver.close(()=>{consolelog(tmp+" datagrams recived on port:"+address.port);});
+  if (tmp>max) myserver.close(()=>{consolelog(tmp+" datagrams recived on port:"+address.port);});
 });
 
 
@@ -78,7 +79,7 @@ message[3]=7;           //stream number max
 message[4]=max;          //max
 message[5]=(MY_SERVER_PORT & 0xFF00)>>8;  // big 
 message[6]= MY_SERVER_PORT & 0xFF;         // little
-message[7]=1;            // patern
+message[7]=pattern;            // patern
 message[8]=0x7f;         // stop byte
 // bind serever//////////////////////////////////////////////////////
 myserver.bind(MY_SERVER_PORT, MY_SERVER_HOST, function(){

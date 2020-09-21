@@ -1,12 +1,14 @@
 /// UDP server bistrolet    ///////////////////////
-const version=200904.1;
+const version=200921.1;
 const debug=3;
 const SERVERPORT = 9090;
 const pi=Math.PI;
 const pi2=Math.PI*2;
 const pina2=Math.PI/2;
 const r2g=180/Math.PI;
-const SERVERHOST='192.162.132.124';
+//const SERVERHOST='192.162.132.124';
+const SERVERHOST='0.0.0.0';
+var lastidx=0;
 //var HOST='192.162.132.124'; // pumps
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
@@ -19,10 +21,66 @@ myEmitter.on('cmd', (cmd) => {
   console.log('an event occurred!');
 });  ////myEmitter.emit('cmd');
 /////////////////
+
+var azimuth = {
+  movestate: 0,
+  ts: 0,
+  _angl: 0,
+  get angl(){
+    prom4ts=new Promise(function(resolv,reject){
+      sts=new Date();
+      azimuth.ts = sts.getTime();
+      resolv(1);
+      reject(0)
+    })
+    prom4ts.then(this._angl = 40950);// get from STAS.  
+    return this._angl;
+  },
+  set angl(value) {
+    if (value>=0 && value <=1048576) {
+      this._angl=value;
+      sts=new Date();
+      azimuth.ts =sts.getTime();
+    }
+    else {consolelog("! AZIMUTH error set value:"+value);return 0}
+  }  
+};
+
+var ele = {
+  movestate: 0,
+  ts: 0,
+
+  get angl(){
+    prom4ts=new Promise(function(resolv,reject){
+      sts=new Date();
+      ele.ts = sts.getTime();
+      resolv(1);
+      reject(0)
+    })
+    prom4ts.then(this._angl = 10240);// get from STAS.  
+    return this._angl;
+  },
+  set angl(value) {
+    if (value>=0 && value <=1048576) {
+      this._angl=value;
+      sts=new Date();
+      ele.ts =sts.getTime();
+    }
+    else {consolelog("! ELEVATION error set value:"+value);return 0}
+  }  
+
+};
+
 var stopflag=new Array;
 var clients = new Array;
 var newclient  = new Object;
-newclient={ptr: dgram.createSocket('udp4'),num: 0,cnt:0,ptrn:0};
+newclient={
+  ptr: dgram.createSocket('udp4'),
+  num: 0,
+  cnt:0,
+  ptrn:0,
+  stopflag:0
+};
 clients[0]= newclient;//open for future. time-economy
 const fs = require("fs");
 ///////////////////////my variables
@@ -81,78 +139,115 @@ function validation(message){
 function getxy(){return Math.sqrt(ts.getTime);};
 
 function createinfo(max,port,num,pattern,address) {
-  consolelog("+ trying create streem @ max :"+ max + "  IP:port : "+ address+":"+port +
-    " numb: "+ num + " ptrn: "+ pattern );
+  consolelog("+ trying create streem @ max :"+ max + "  IP:port : "+ address 
+  +":"+port + " numb: "+ num + " ptrn: "+ pattern );
   var i=0;
-  for (i=0;i<clients.length;i++) if (clients[i].num==num) {
-    consolelog("! stream #"+num+" allredy present!");
-    return 1
-  }; 
-  clients[0].num=num; 
-  var lastidx=clients.length;
-  clients[lastidx]=clients[0]; //create new array element
+  if (!( () => {for (i=0;i<clients.length;i++) if (clients[i].num==num) return 1;})){
+    consolelog("! duplicat identificator for streeam");
+    return 0;
+  }
+  else { 
+  
+    clients[0].num=num; 
+//    var lastidx=clients.length;
+//    clients[lastidx]=clients[0]; //create new array element
 
-  var msgbuf=new Buffer.from("\x7f"+"1234"+"\x7e");//size=6    
-  var cnt=0;
-  if (max) cnt=0; else cnt=-1;  
-  var p=new Array;
-  i=0;
-  var prtmp= new Promise(function(resolve,reect){
-    while (cnt<max){
-      p[i] = new Promise(function(resolve,reject){
-        var outmsg=new Buffer.from("\x7f"+"1234"+"\x7e");//size=6    
-        outmsg[0] = 0x7e;
-        outmsg[1] = (i &0xff000000)>>24;
-        outmsg[2] = (i &0xff0000)>>16;
-        outmsg[3] = (i &0xff00)>>8;
-        outmsg[4] = (i &0xff);
-        outmsg[outmsg.length-1] = 0x7f;        
-//      console.log("---- n="+i+" "+ hexdump(outmsg));
-        resolve(outmsg);
-        reject("---- ERROR");
-      })
-      p[i].then((fulfilled) => {
+// while (!clients[lastidx].stopflag){
 
-/*
-  myclient.send(message, 0, 9, OPU_SERVER_PORT, OPU_SERVER_HOST, function(err, bytes) {
-    //after sending message:
-    if (err) throw err;
-    ts = new Date();
-    consolelog('* Start command. Open new infostreeam ');
-    consolelog('> SND UDP client message [' +hexdump(message)+ '] sent to ' + OPU_SERVER_HOST +':'+ OPU_SERVER_PORT);
-  });
-*/
+//  var msgbuf=new Buffer.from("\x7f"+"1234567890123456"+"\x7e");//size=18    
+    var cnt=0;
+//    if (!max) max=256;
+//    if (max) cnt=0; else cnt=-1;  
+    var p=new Array;//array for promises
+    i=0;
+    var prtmp= new Promise(function(resolve,reect){ //main promise
+      while (cnt<max){
+        p[i] = new Promise(function(resolve,reject){
+          if (pattern==1) {
+            var outmsg=new Buffer.from("\x7f"+"1234567890123456"+"\x7e");//18Byte
+            outmsg[0] = 0x7e;                   //start byte
+            ii=azimuth.angl;
+            outmsg[1] = (ii &0xff000000)>>24;    //angle
+            outmsg[2] = (ii &0xff0000)>>16;
+            outmsg[3] = (ii &0xff00)>>8;
+            outmsg[4] = (ii &0xff);
+            ii=azimuth.ts;
+            outmsg[5] = (ii &0xff000000)>>24;    //time
+            outmsg[6] = (ii &0xff0000)>>16;
+            outmsg[7] = (ii &0xff00)>>8;
+            outmsg[8] = (ii &0xff);
+            ii=ele.angl;
+            outmsg[9] = (ii &0xff000000)>>24;    //angle
+            outmsg[10] = (ii &0xff0000)>>16;
+            outmsg[11] = (ii &0xff00)>>8;
+            outmsg[12] = (ii &0xff);
+            ii=ele.ts;
+            outmsg[13] = (ii &0xff000000)>>24;    //time
+            outmsg[14] = (ii &0xff0000)>>16;
+            outmsg[15] = (ii &0xff00)>>8;
+            outmsg[16] = (ii &0xff);                       
+            
+            outmsg[outmsg.length-1] = 0x7f;        
+          } else var outmsg=new Buffer.from("\x7f"+"1"+"\x7e");//size=3
 
-        clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port, address, () => consolelog(">> ["+hexdump(fulfilled)+"] "+address+":"+port + " ") ) 
-        clients[lastidx].cnt++; 
-      });
-      if (max) cnt++;
-      i++;
-      if (stopflag[num]) cnt=max+1; 
-    }; // end loop
-    resolve(i);
-    reject('--- ERROR MP');
-  });
-  prtmp.then((fulfilled) => {
+          resolve(outmsg);
+          reject("---- ERROR");        
+        })
+        p[i].then((fulfilled) => {
+          clients[lastidx].ptr.send(fulfilled,0,fulfilled.length,port, address, 
+           ()=>consolelog(">> ["+hexdump(fulfilled)+"] "+address+":"+port+" "));
+          clients[lastidx].cnt++; 
+        });
+        cnt++;
+        i++;
+        if (stopflag[num]) cnt=max+1; 
+//console.log("i="+i+" cnt="+cnt);
+      }; // end loop
+      resolve(i);
+      reject('--- ERROR MP');
+    });
+    prtmp.then((fulfilled) => {
 //   var tmpsock = clients[lastidx].ptr;
 //   var tmpadrr =tmpsock.address();
-    consolelog(">> sendeded "+ clients[lastidx].cnt + "("+fulfilled+") dgrams @N:" + clients[lastidx].num + " adr:" );
-    clients[lastidx].num=clients[lastidx].ptrn=clients[lastidx].cnt=0; //clear obj
-    clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0}//create new
-  });
-  return 0;
+      consolelog(">> sendeded "+ clients[lastidx].cnt + 
+      "("+fulfilled+") dgrams @N:" + clients[lastidx].num + " adr:" +  address+":"+port);
+      clients[lastidx].num=clients[lastidx].ptrn=clients[lastidx].cnt=0; //clear obj
+      clients[0]= {ptr: dgram.createSocket('udp4'),num: 0,cnt: 0,ptrn: 0, stopflag: 0}//create new
+    });
+
+//    if (max!=256) {clients[lastidx].stopflag=1;return 0;}
+    
+//} //end wild wile
+
+  } //end main else
+  return 1;
+
 }//end function createinfo()
 
 function startcommand(msg,sender){
+  lastidx=clients.length;
+  clients[lastidx]=clients[0]; //create new array element
+
   consolelog("+ starter-function:start command "+hexdump(msg)+" Sender address: " +sender);
   if (msg[2]==0) {
-    if (!createinfo(msg[4],(msg[6]+(msg[5]<<8)),msg[3],msg[7],sender)){ 
-    consolelog('* command '+ msg[2]+' strted. sender adress:' + sender);
+    if (msg[4]){
+      if (!createinfo(msg[4],(msg[6]+(msg[5]<<8)),msg[3],msg[7],sender)){ 
+        consolelog('* command '+ msg[2]+' strted. sender adress:' + sender);
+      }
+      else consolelog("! error create stream!");
     }
-    else consolelog("! error create stream!");
+    else {
+//      while (!clients[lastidx].stopflag){
+
+        if (!createinfo(255,(msg[6]+(msg[5]<<8)),msg[3],msg[7],sender)){ 
+          consolelog('* command '+ msg[2]+' strted. sender adress:' + sender);
+        }
+        else consolelog("! error create loop stream!");
+      
+//      }    
+    }
   }
   else consolelog('* command of movement temporary not available ');
-
 };
 ///////////////////////server function
 server.on('error', function (err){
