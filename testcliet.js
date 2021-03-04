@@ -12,7 +12,8 @@ function consolelog(msg){
 
 var OPU_SERVER_PORT = 9090; // PORT -- 4 connect 2 OPU-SERVER
 //var OPU_SERVER_HOST='192.162.132.124';//  PORT -- 4 connect 2 OPU-SERVER
-var OPU_SERVER_HOST='185.255.135.85';
+//var OPU_SERVER_HOST='185.255.135.85';
+var OPU_SERVER_HOST='127.0.0.1';
 //var OPU_SERVER_HOST='127.0.0.1';//  PORT -- 4 connect 2 OPU-SERVER
 //var OPU_SERVER_HOST='178.158.224.123'; //  PORT -- 4 connect 2 OPU-SERVER
 
@@ -28,7 +29,7 @@ var ts = new Date();
 
 var packn = 1;
 var cmd = 0; // 0..11
-var max = 0;
+var max = 10;
 var pattern = 1;
 var tmp=0;
 var tmp0=0;
@@ -72,7 +73,7 @@ myclient.on('message', function (message, remote) {
 });
 
 /////////end events //////////
-var message = new Buffer.from('123456789') 
+var message = new Buffer.from('123456789');
 message[0]=0x7e;         // start byte
 message[1]=packn & 0xff; // packet number
 message[2]=0;            // cmd

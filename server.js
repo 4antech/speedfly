@@ -1,5 +1,5 @@
 /// UDP server bistrolet    ///////////////////////
-const version=200921.1;
+const version='210301.1';
 const debug=3;
 const SERVERPORT = 9090;
 const pi=Math.PI;
@@ -7,8 +7,8 @@ const pi2=Math.PI*2;
 const pina2=Math.PI/2;
 const r2g=180/Math.PI;
 //const SERVERHOST='192.162.132.124';
-const SERVERHOST='185.255.135.85';
-//const SERVERHOST='0.0.0.0';
+//const SERVERHOST='10.10.10.30';
+const SERVERHOST='0.0.0.0';
 var lastidx=0;
 //var HOST='192.162.132.124'; // pumps
 const dgram = require('dgram');
@@ -44,7 +44,7 @@ var azimuth = {
       azimuth.ts =sts.getTime();
     }
     else {consolelog("! AZIMUTH error set value:"+value);return 0}
-  }  
+  }
 };
 
 var ele = {
