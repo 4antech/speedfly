@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /// UDP server bistrolet    ///////////////////////
 const version='210301.1';
 const debug=3;
@@ -23,14 +25,17 @@ myEmitter.on('cmd', (cmd) => {
 });  ////myEmitter.emit('cmd');
 /////////////////
 
-/*
+
 //SerialPort extention
 const SerialPort = require('serialport')
 const parsers = SerialPort.parsers
 const parser = new parsers.Readline({delimiter: '\n'});
 const port = new SerialPort('/dev/serial0', {baudRate: 921600});
 port.pipe(parser);
-port.on('open', () => consolelog('* SerialPort Ok'));
+port.on('open', () => {
+    consolelog('* SerialPort Ok');
+    port.write("1|11|15|z\n");
+    });
 parser.on('data', data=>{
 // Сохраняем позицию енкодера
 //port.write(data);
@@ -42,10 +47,6 @@ console.log(data);
 function xmove(can_address,speed) {
   port.write("2|"+can_address+"|"+speed+"|z\n");
 }
-
-
-*/
-
 
 var azimuth = {
   movestate: 0,
@@ -143,7 +144,7 @@ function hexdump(msg){  //return string in
   return tmpstr;
 }
 ////////////////////////////////////////////////
-dgsize=[9,5,10,12,10,12,6,5,10,12,10,12,6,5,20];
+dgsize=[9,5,10,12,10,12,6,5,10,12,10,12,6,5,28];
 ////////////////////////////////////////////////
 function validation(message){
 //detection START-END Bytes 0x7e 0x7f
@@ -201,11 +202,14 @@ function validation(message){
   if (cmd==14) { 
     arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
     arg2= message[7]<<24 + message[8]<<16 + message[9]<<8+message[10];
-    arg3= message[11]<<24 + message[12]<<16 + message[1]<<8+message[14];
-    arg4= message[15]<<24 + message[16]<<16 + message[17]<<8+message[18];
+    arg3= message[11]<<24 + message[12]<<16 + message[13]<<8+message[14]; //
+    arg4= message[15]<<24 + message[16]<<16 + message[17]<<8+message[18]; //
+    arg5= message[19]<<24 + message[20]<<16 + message[21]<<8+message[22]; //
+    arg6= message[23]<<24 + message[24]<<16 + message[25]<<8+message[26]; //
 
-    consolelog("<<cmd:"+cmd+" N="+npack+" az_soft"+ arg1+"  el_soft="+ arg2+" az_zero"+ arg3+"  el_zero="+ arg4);
-    if (arg1<0 || arg1>1048576 ) {consolelog("! error args");return 1;}
+    consolelog("<<cmd:"+cmd+" N="+npack+" az_ccw"+ arg1+"  az_cw="+ arg2+" el_down"+ arg3+" el_up="+ arg4 +" az_delta"+ arg5+" el_delta="+ arg6);
+    if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1048576 || arg3<-524288 || arg3>524288 || arg4<-524288 || arg4>524288 || 
+        arg5<-1048567 || arg5>1048576 || arg6<-1048567 || arg6>1048576 ) {consolelog("! error args");return 1;}
   }
 
 

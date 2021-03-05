@@ -44336,3 +44336,17 @@
 1614939944461. >> sendeded 1(1) dgrams @N:2 adr:172.17.111.42:9092 <br>
 1614939944463. >> [.7e.00.00.9f.f6.01.eb.f6.08.00.00.28.00.01.eb.f6.08.7f.] 172.17.111.42:9092  <br>
 1614940245799. * Start UDP Server listening on 0.0.0.0:9090 <br>
+1614940329357. < rcv from 172.17.111.42:9090 - [.7e.03.02.00.02.00.00.00.00.7f.] <br>
+1614940329361. <<cmd:2 N=3 coord=0 speed=0 <br>
+1614940329364. + starter-function:start command .7e.03.02.00.02.00.00.00.00.7f. Sender address: 172.17.111.42 <br>
+1614940329366. * command of movement temporary not available  <br>
+1614940329367. * CMD Ok [2] packet N=3 from 172.17.111.42:9090 <br>
+1614940329374. > snt UDP server message response to 172.17.111.42:9090 [.7e.03.02.00.7f.] <br>
+1614940329375. ____________ <br>
+1614940358627. < rcv from 172.17.111.42:9090 - [.7e.04.04.00.00.44.44.00.00.7f.] <br>
+1614940358629. <<cmd:4 N=4 angle=0 speed=0 <br>
+1614940358630. + starter-function:start command .7e.04.04.00.00.44.44.00.00.7f. Sender address: 172.17.111.42 <br>
+1614940358631. * command of movement temporary not available  <br>
+1614940358632. * CMD Ok [4] packet N=4 from 172.17.111.42:9090 <br>
+1614940358634. > snt UDP server message response to 172.17.111.42:9090 [.7e.04.04.00.7f.] <br>
+1614940358635. ____________ <br>
