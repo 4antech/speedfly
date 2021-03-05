@@ -200,14 +200,15 @@ function validation(message){
   }
 
   if (cmd==14) { 
-    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
-    arg2= message[7]<<24 + message[8]<<16 + message[9]<<8+message[10];
-    arg3= message[11]<<24 + message[12]<<16 + message[13]<<8+message[14]; //
-    arg4= message[15]<<24 + message[16]<<16 + message[17]<<8+message[18]; //
-    arg5= message[19]<<24 + message[20]<<16 + message[21]<<8+message[22]; //
-    arg6= message[23]<<24 + message[24]<<16 + message[25]<<8+message[26]; //
+//console.log("m3="+message[3]+" <<24 = "+(message[3]<<24));
 
-    consolelog("<<cmd:"+cmd+" N="+npack+" az_ccw"+ arg1+"  az_cw="+ arg2+" el_down"+ arg3+" el_up="+ arg4 +" az_delta"+ arg5+" el_delta="+ arg6);
+    arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8)+message[6];
+    arg2= (message[7]<<24) + (message[8]<<16) + (message[9]<<8)+message[10];
+    arg3= (message[11]<<24) +(message[12]<<16) + (message[13]<<8)+message[14]; //
+    arg4= (message[15]<<24) +(message[16]<<16) + (message[17]<<8)+message[18]; //
+    arg5= (message[19]<<24) + (message[20]<<16) + (message[21]<<8)+message[22]; //
+    arg6= (message[23]<<24) + (message[24]<<16) + (message[25]<<8)+message[26]; //
+    consolelog("<<cmd:"+cmd+" N="+npack+" az_ccw="+ arg1+"  az_cw="+ arg2+" el_down="+ arg3+" el_up="+ arg4 +" az_delta="+ arg5+" el_delta="+ arg6);
     if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1048576 || arg3<-524288 || arg3>524288 || arg4<-524288 || arg4>524288 || 
         arg5<-1048567 || arg5>1048576 || arg6<-1048567 || arg6>1048576 ) {consolelog("! error args");return 1;}
   }

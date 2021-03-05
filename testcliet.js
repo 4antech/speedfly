@@ -76,13 +76,14 @@ myclient.on('message', function (message, remote) {
 var message = new Buffer.from('123456789');
 message[0]=0x7e;         // start byte
 message[1]=packn & 0xff; // packet number
-message[2]=0;            // cmd
+message[2]=14;            // cmd
 message[3]=7;           //stream number max
 message[4]=max;          //max
 message[5]=(MY_SERVER_PORT & 0xFF00)>>8;  // big 
 message[6]= MY_SERVER_PORT & 0xFF;         // little
 message[7]=pattern;            // patern
 message[8]=0x7f;         // stop byte
+
 // bind serever//////////////////////////////////////////////////////
 myserver.bind(MY_SERVER_PORT, MY_SERVER_HOST, function(){
   //after binding:
