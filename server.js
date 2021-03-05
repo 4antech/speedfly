@@ -23,6 +23,30 @@ myEmitter.on('cmd', (cmd) => {
 });  ////myEmitter.emit('cmd');
 /////////////////
 
+/*
+//SerialPort extention
+const SerialPort = require('serialport')
+const parsers = SerialPort.parsers
+const parser = new parsers.Readline({delimiter: '\n'});
+const port = new SerialPort('/dev/serial0', {baudRate: 921600});
+port.pipe(parser);
+port.on('open', () => consolelog('* SerialPort Ok'));
+parser.on('data', data=>{
+// Сохраняем позицию енкодера
+//port.write(data);
+console.log(data);
+});
+//////////////////////////// CAN 
+//function readenc(can_address) return enc[can_address];
+
+function xmove(can_address,speed) {
+  port.write("2|"+can_address+"|"+speed+"|z\n");
+}
+
+
+*/
+
+
 var azimuth = {
   movestate: 0,
   ts: 0,
@@ -124,10 +148,74 @@ dgsize=[9,5,10,12,10,12,6,5,10,12,10,12,6,5,20];
 function validation(message){
 //detection START-END Bytes 0x7e 0x7f
   if (message[0]!=126 || message[message.length-1]!=127 ) return 2;//0x7e 0x7f
-//detection command number. valid range 0..10
+//detection command number. valid range 0..15
   var cmd=message[2];
   if (cmd<0 || cmd>15) return 3; //unknown command
   if (dgsize[cmd]!=message.length) return 4; //coomand size
+//validation  args:
+  npack=message[1]
+
+  if (cmd==0) { // 0
+    arg1=message[3];
+    arg2=message[4];
+    arg3=message[6] + (message[5]<<8);
+    arg4=message[7];
+    consolelog("<< cmd:"+cmd+" N="+npack+"; potok N"+ arg1+"; max pack="+ arg2 +"; port:"+ arg3 +"; pattern "+ arg4+";");
+    if (arg2==0 || arg4>10) {consolelog("! error args");return 1;}
+  }
+
+  if (cmd==2 || cmd==8) { 
+    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
+    arg2= message[7]<<8+message[8];
+    consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+" speed="+ arg2);
+    if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
+  }
+
+  if (cmd==3 || cmd==9) { 
+    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
+    arg2= message[7]<<24 + message[8]<<16 + message[9]<<8+message[10];
+    consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+"  time="+ arg2);
+    if (arg1<0 || arg1>1048576 ) {consolelog("! error args");return 1;}
+  }
+  
+  if (cmd==4 || cmd==10) { 
+    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
+    arg2= message[7]<<8+message[8];
+    consolelog("<<cmd:"+cmd+" N="+npack+" angle="+ arg1+" speed="+ arg2);
+    if (arg1<-1048576 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
+  }
+
+  if (cmd==5 || cmd==11) { 
+    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
+    arg2= message[7]<<24 + message[8]<<16 + message[9]<<8+message[10];
+    consolelog("<<cmd:"+cmd+" N="+npack+" angel="+ arg1+"  time="+ arg2);
+    if (arg1<-1048576 || arg1>1048576 ) {consolelog("! error args");return 1;}
+  }
+
+  if (cmd==6 || cmd==12 ) { 
+    arg1= message[3]<<8+message[4];
+    consolelog("<<cmd:"+cmd+" N="+npack+" speed="+ arg1);
+    if (arg1<-1048576 || arg1>1048576 ) {consolelog("! error args");return 1;}
+  }
+
+  if (cmd==14) { 
+    arg1= message[3]<<24 + message[4]<<16 + message[5]<<8+message[6];
+    arg2= message[7]<<24 + message[8]<<16 + message[9]<<8+message[10];
+    arg3= message[11]<<24 + message[12]<<16 + message[1]<<8+message[14];
+    arg4= message[15]<<24 + message[16]<<16 + message[17]<<8+message[18];
+
+    consolelog("<<cmd:"+cmd+" N="+npack+" az_soft"+ arg1+"  el_soft="+ arg2+" az_zero"+ arg3+"  el_zero="+ arg4);
+    if (arg1<0 || arg1>1048576 ) {consolelog("! error args");return 1;}
+  }
+
+
+
+
+/*
+
+*/
+
+
 // validation code:
 // good data           0
 // bad args            1
@@ -135,6 +223,7 @@ function validation(message){
 // unknown command     3
 // bad packet size     4
   return 0;
+
 }
 ///////////////////////////////////////////////////////////////////////
 function getxy(){return Math.sqrt(ts.getTime);};
