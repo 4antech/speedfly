@@ -44520,3 +44520,19 @@
 1614959290002. ! Error packet args [.7e.01.0e.00.0f.42.40.00.0b.dd.53.00.08.7b.01.ff.f9.37.e4.ff.f7.85.dd.ff.f0.bb.68.7f.] from 127.0.0.1:36950 <br>
 1614959290009. > snt UDP server message response to 127.0.0.1:36950 [.7e.01.0e.01.7f.] <br>
 1614959290011. ____________ <br>
+1614960615839. < rcv from 127.0.0.1:45531 - [.7e.01.0e.00.0f.42.40.00.0b.dd.53.00.08.7b.01.ff.f9.37.e4.ff.f7.85.dd.ff.f0.bb.68.7f.] <br>
+1614960615849. <<cmd:14 N=1 az_ccw=1000000  az_cw=777555 el_down=555777 el_up=-444444 az_delta=-555555 el_delta=-1000600 <br>
+1614960615853. ! error args <br>
+1614960615854. ! Error packet args [.7e.01.0e.00.0f.42.40.00.0b.dd.53.00.08.7b.01.ff.f9.37.e4.ff.f7.85.dd.ff.f0.bb.68.7f.] from 127.0.0.1:45531 <br>
+1614960615858. > snt UDP server message response to 127.0.0.1:45531 [.7e.01.0e.01.7f.] <br>
+1614960615859. ____________ <br>
+1614960654561. < rcv from 127.0.0.1:58504 - [.7e.01.0e.00.0f.42.40.00.0b.dd.53.00.08.7b.01.ff.f9.37.e4.ff.f7.85.dd.ff.f0.bb.68.7f.] <br>
+1614960654571. <<cmd:14 N=1 az_ccw=1000000  az_cw=777555 el_down=555777 el_up=-444444 az_delta=-555555 el_delta=-1000600 <br>
+1614960654574. ! error args <br>
+1614960654574. ! Error packet args [.7e.01.0e.00.0f.42.40.00.0b.dd.53.00.08.7b.01.ff.f9.37.e4.ff.f7.85.dd.ff.f0.bb.68.7f.] from 127.0.0.1:58504 <br>
+1614960654578. > snt UDP server message response to 127.0.0.1:58504 [.7e.01.0e.01.7f.] <br>
+1614960654579. ____________ <br>
+1614961268922. * Start UDP Server listening on 0.0.0.0:9090
+1614961268940. * SerialPort Ok
+1615040977300. * Start UDP Server listening on 0.0.0.0:9090
+1615040977317. * SerialPort Ok
