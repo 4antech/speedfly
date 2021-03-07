@@ -34,12 +34,12 @@ myclient.on('message', function (message, remote) {
 });
 
 /////////end events //////////
-var arg1 = 1000000;
-var arg2 = 777555;
-var arg3 = 555777;
-var arg4 = -444444;
-var arg5 = -555555;
-var arg6 = -1000600;
+var arg1 = 1000;
+var arg2 = 777;
+var arg3 = 557;
+var arg4 = 4444;
+var arg5 = 5555;
+var arg6 = 600;
 
 var message = new Buffer.from('1234567890123456789012345678');
 message[0]=0x7e;         // start byte
