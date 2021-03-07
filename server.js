@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /// UDP server bistrolet    ///////////////////////
 const version='210301.1';
 const debug=2;
@@ -15,6 +14,7 @@ var lastidx=0;
 //var HOST='192.162.132.124'; // pumps
 const dgram = require('dgram');
 const server = dgram.createSocket('udp4');
+const fs = require("fs");
 ///////////////////
 const EventEmitter = require('events');
 class MyEmitter extends EventEmitter {}
@@ -32,7 +32,7 @@ var statebrake_el = 0; //not used in pion
 var statebrake_az = 0; 
 
 //TODO: set to REAL DATA for device
-var  AZ_SOFTLIMIT_CW   = 10; // 180
+var  AZ_SOFTLIMIT_CW   = 20; // 180
 var  AZ_SOFTLIMIT_CCW  = 20; // 0
 var  EL_SOFTLIMIT_UP   = 30; // 88
 var  EL_SOFTLIMIT_DOWN = 40; // 5
@@ -65,6 +65,8 @@ function xmove(can_address,speed) {
 }
 
 var azimuth = {
+  flag2stop: 0,
+  lag4start: 1,
   movestate: 0,
   ts: 0,
   _angl: 0,
@@ -76,9 +78,11 @@ var azimuth = {
       reject(0)
     })
     prom4ts.then(this._angl = 40950);// get from STAS.  
+    //test on softlimit TODO
     return this._angl;
   },
   set angl(value) {
+    //test on softlimit TODO
     if (value>=0 && value <=1048576) {
       this._angl=value;
       sts=new Date();
@@ -89,6 +93,8 @@ var azimuth = {
 };
 
 var ele = {
+  flag2stop: 0,
+  lag4start: 1,
   movestate: 0,
   ts: 0,
   get angl(){
@@ -99,9 +105,11 @@ var ele = {
       reject(0)
     })
     prom4ts.then(this._angl = 10240);// get from STAS.  
+    //test on softlimit TODO
     return this._angl;
   },
   set angl(value) {
+    //test on softlimit TODO
     if (value>=0 && value <=1048576) {
       this._angl=value;
       sts=new Date();
@@ -109,7 +117,6 @@ var ele = {
     }
     else {consolelog("! ELEVATION error set value:"+value);return 0}
   }  
-
 };
 
 var stopflag=new Array;
@@ -123,7 +130,6 @@ newclient={
   stopflag:0
 };
 clients[0]= newclient;//open for future. time-economy
-const fs = require("fs");
 function consolelog(msg){
   if (debug) {
     ts = new Date();
@@ -169,6 +175,8 @@ function validation(message){
     arg2= (message[7]<<8) + message[8];
     consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+" speed="+ arg2);
     if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
+//TODO softlimit
+    else if (){return 5}
   }
 ///////// command N4 (0x03) & command N10 (0x09)
   else if (cmd==3 || cmd==9) { 
@@ -240,12 +248,13 @@ function validation(message){
 // non-formated        2
 // unknown command     3
 // bad packet size     4
+// permition           5
 ///////////////////////////////////////////////////////////////////////
 function getxy(){return Math.sqrt(ts.getTime);}; //TODO: <--- ztychka
 
 function startcommand(msg,sender){
-  lastidx=clients.length;
-  clients[lastidx]=clients[0]; //create new array element
+
+
   consolelog("+ starter-function:start command "+hexdump(msg)+" Sender address: " +sender);
   consolelog('* command temporary not available ');
 };
@@ -285,11 +294,11 @@ server.on('message', function (message, remote) {
   else if (validstatus==4) msglog=("! error packet size:" + message.length +" for this command:[" + command.toString(16) + "]" + " packet N=" +dtnum  );        //bad incoming packet
   else if (validstatus==0)  {
     msglog=('* CMD Ok [' + command + ']' + " packet N=" +dtnum  ); //pck&arg Ok!   
-    var cmd=command;
+//    var cmd=command;
 //    startcommand(message,remote.address);    //   Synhro              <--------------------starter
-    if (cmd==1 || cmd==0) myEmitter.emit('info',message);
-    if (cmd>1 && cmd<8) myEmitter.emit('az',message);
-    if (cmd>7 && cmd<14) myEmitter.emit('el',message);
+    if (command==1 || command==0) myEmitter.emit('info',message);
+    if (command>1 && command<8) myEmitter.emit('az',message);
+    if (command>7 && command<14) myEmitter.emit('el',message);
     if (command==14) myEmitter.emit('sys',message);
 //    myEmitter.emit('cmd',message);     // asynchro
   };
@@ -312,28 +321,44 @@ server.on('message', function (message, remote) {
 myEmitter.on('info', (message) => {
   var cmd=message[2];
   consolelog('^ Event 4 infostream. command N'+(1+cmd)+"cmd("+cmd+")");
-  if (cmd==0){ }
+  if (cmd==0){ 
+    lastidx=clients.length;
+    clients[lastidx]=clients[0]; //create new array element
+    //start event from pattern
+  } else {
+    // flag stop 2 client
+    // kill client from array
+    // reindex array
+  }
 });
 
 ///azimuth
 myEmitter.on('az', (message) => {
   var cmd=message[2];
   consolelog('^ Event 4 Azimuth. command N'+(1+cmd)+"cmd("+cmd+")");
-  if (cmd==0){ }
+// TODO
+// if breake then move_az(0) & stop!
+// correct obgect flag
+// stop prev event.
+// start new event uses object az as flag
 });
 
 ///elevation
 myEmitter.on('el', (message) => {
   var cmd=message[2];
   consolelog('^ Event 4 Elevation. command N'+(1+cmd)+"cmd("+cmd+")");
-  if (cmd==0){ }
+// TODO
+// if breake then move_el(0) & stop!
+// correct obgect flag
+// stop prev event.
+// start new event uses object el as flag
 });
 
 ///Change sys param
 myEmitter.on('sys', (message) => {
   var cmd=message[2];
   consolelog('^ Event Change sys param. command N'+(1+cmd)+"cmd("+cmd+")");
-  if (cmd==0){ }
+  // test curent position for new limit?
 });
 
 ////myEmitter.emit('cmd');
