@@ -20,10 +20,26 @@ const EventEmitter = require('events');
 class MyEmitter extends EventEmitter {}
 const myEmitter = new MyEmitter();
 const infostream =  new MyEmitter();
-myEmitter.on('cmd', (cmd) => {
-  console.log('an event occurred!');
-});  ////myEmitter.emit('cmd');
+
 /////////////////
+///////////////////////my variables
+var indtcnt =0;
+var flag2stop = 0 ;
+var statemove_el = 0;
+var statemove_az = 0;
+//variable - flag-status brake-stat 0-off 1-brake-on
+var statebrake_el = 0; //not used in pion
+var statebrake_az = 0; 
+
+//TODO: set to REAL DATA for device
+var  AZ_SOFTLIMIT_CW   = 10; // 180
+var  AZ_SOFTLIMIT_CCW  = 20; // 0
+var  EL_SOFTLIMIT_UP   = 30; // 88
+var  EL_SOFTLIMIT_DOWN = 40; // 5
+var  AZ_OFFSET = 0;   //  <---+______ TODO: initfunction. 
+var  EL_OFFSET = 0;   //  <---+
+//END TODO---------------------------
+///////////////////////////////////////////////////////
 
 
 //SerialPort extention
@@ -108,24 +124,6 @@ newclient={
 };
 clients[0]= newclient;//open for future. time-economy
 const fs = require("fs");
-///////////////////////my variables
-var indtcnt =0;
-var flag2stop = 0 ;
-var statemove_el = 0;
-var statemove_az = 0;
-//variable - flag-status brake-stat 0-off 1-brake-on
-var statebrake_el = 0; //not used in pion
-var statebrake_az = 0; 
-
-//TODO: set to REAL DATA for device
-var  AZ_SOFTLIMIT_CW   = 10; // 180
-var  AZ_SOFTLIMIT_CCW  = 20; // 0
-var  EL_SOFTLIMIT_UP   = 30; // 88
-var  EL_SOFTLIMIT_DOWN = 40; // 5
-var  AZ_OFFSET = 0;   //  <---+______ TODO: initfunction. 
-var  EL_OFFSET = 0;   //  <---+
-//END TODO---------------------------
-///////////////////////////////////////////////////////
 function consolelog(msg){
   if (debug) {
     ts = new Date();
@@ -150,12 +148,13 @@ function validation(message){
 //detection START-END Bytes 0x7e 0x7f
   if (message[0]!=126 || message[message.length-1]!=127 ) return 2;//0x7e 0x7f
 //detection command number. valid range 0..15
+  var npack=message[1];
   var cmd=message[2];
   if (cmd<0 || cmd>15) return 3; //unknown command
   if (dgsize[cmd]!=message.length) return 4; //command size.
+////////////
 //validation  args:
-  npack=message[1]
-
+///////// command N1 (0x00)
   if (cmd==0) { // 0
     arg1=message[3];
     arg2=message[4];
@@ -164,43 +163,43 @@ function validation(message){
     consolelog("<< cmd:"+cmd+" N="+npack+"; potok N"+ arg1+"; max pack="+ arg2 +"; port:"+ arg3 +"; pattern "+ arg4+";");
     if (arg2==0 || arg4>10) {consolelog("! error args");return 1;}
   }
-
-  if (cmd==2 || cmd==8) { 
+///////// command N3 (0x02) & command N9 (0x08)
+  else if (cmd==2 || cmd==8) { 
     arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8)+message[6];
-    arg2= (message[7]<<8)+message[8];
+    arg2= (message[7]<<8) + message[8];
     consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+" speed="+ arg2);
     if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
   }
-
-  if (cmd==3 || cmd==9) { 
+///////// command N4 (0x03) & command N10 (0x09)
+  else if (cmd==3 || cmd==9) { 
     arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8)+message[6];
     arg2= (message[7]<<24) + (message[8]<<16) + (message[9]<<8)+message[10];
     consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+"  time="+ arg2);
     if (arg1<0 || arg1>1048576 ) {consolelog("! error args");return 1;}
   }
-  
-  if (cmd==4 || cmd==10) { 
+///////// command N5 (0x04) & command N11 (0x0a)
+  else if (cmd==4 || cmd==10) { 
     arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8) + message[6];
     arg2= (message[7]<<8)+message[8];
     consolelog("<<cmd:"+cmd+" N="+npack+" angle="+ arg1+" speed="+ arg2);
     if (arg1<-1048576 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
   }
-
-  if (cmd==5 || cmd==11) { 
+///////// command N6 (0x05) & command N12 (0x0b)
+  else if (cmd==5 || cmd==11) { 
     arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8) + message[6];
     arg2= (message[7]<<24) + (message[8]<<16) + (message[9]<<8) + message[10];
     consolelog("<<cmd:"+cmd+" N="+npack+" angel="+ arg1+"  time="+ arg2);
     if (arg1<-1048576 || arg1>1048576 ) {consolelog("! error args");return 1;}
   }
-
-  if (cmd==6 || cmd==12 ) { 
+///////// command N7 (0x06) & command N13 (0x0c)
+  else if (cmd==6 || cmd==12 ) { 
     arg1= (message[3]<<8)+message[4];
     consolelog("<<cmd:"+cmd+" N="+npack+" speed="+ arg1);
     if (arg1<-1048576 || arg1>1048576 ) {consolelog("! error args");return 1;}
   }
-
-  if (cmd==14) { 
-//parsing:
+///////// command N15 (0x0e)
+  else if (cmd==14) { 
+  //parsing:
     arg1= (message[3]<<24) + (message[4]<<16) + (message[5]<<8) + message[6];
     arg2= (message[7]<<24) + (message[8]<<16) + (message[9]<<8) + message[10];
     arg3= (message[11]<<24) +(message[12]<<16) + (message[13]<<8) + message[14]; //
@@ -208,21 +207,21 @@ function validation(message){
     arg5= (message[19]<<24) + (message[20]<<16) + (message[21]<<8)+ message[22]; //
     arg6= (message[23]<<24) + (message[24]<<16) + (message[25]<<8)+ message[26]; //
     consolelog("<< cmd:"+cmd+" N="+npack+" az_ccw="+ arg1+"  az_cw="+ arg2+" el_down="+ arg3+" el_up="+ arg4 +" az_delta="+ arg5+" el_delta="+ arg6);
-//validation
+  //validation
     if (arg1<0 || arg1>1048576 || 
         arg2<0 || arg2>1048576 || 
         arg3<-524288 || arg3>524288 || 
         arg4<-524288 || arg4>524288 || 
         arg5<-1048567 || arg5>1048576 || 
         arg6<-1048567 || arg6>1048576 ) {consolelog("! error args");return 1;}
-//set variable if correct
+  //set variable if correct
     else {
       AZ_SOFTLIMIT_CCW   = arg1; 
       AZ_SOFTLIMIT_CW  = arg2;
       EL_SOFTLIMIT_DOWN   = arg3;
       EL_SOFTLIMIT_UP = arg4;
-      AZ_OFFSET = arg5;   //  <---+______ TODO: initfunction. 
-      EL_OFFSET = arg6;   //  <---+
+      AZ_OFFSET = arg5;   
+      EL_OFFSET = arg6;  
       consolelog("* set variable:")
       consolelog("= set AZ softlimit cw="+ arg1);
       consolelog("= set AZ softlimit ccw="+ arg2);
@@ -231,18 +230,18 @@ function validation(message){
       consolelog("= set AZ ofset="+ arg5);
       consolelog("= set EL ofset="+ arg6);
     }
-  }
+  } //end command 15 (0x0e)
 
+  return 0;
+} // end of verification function
 // validation code:
 // good data           0
 // bad args            1
 // non-formated        2
 // unknown command     3
 // bad packet size     4
-  return 0;
-}
 ///////////////////////////////////////////////////////////////////////
-function getxy(){return Math.sqrt(ts.getTime);};
+function getxy(){return Math.sqrt(ts.getTime);}; //TODO: <--- ztychka
 
 function startcommand(msg,sender){
   lastidx=clients.length;
@@ -273,20 +272,26 @@ server.on('message', function (message, remote) {
   var command=message[2];
   var dtnum=message[1];
   var validstatus=validation(message); 
+ 
   var packetResponse=new Buffer.from('whois');
   packetResponse[0]=0x7e;
   packetResponse[1]=message[1];
   packetResponse[2]=message[2];
   packetResponse[3]=validstatus;
   packetResponse[4]=0x7f;
-  if (validstatus==1) msglog=("! Error packet args ["+ hexdump(message) +"]");        //bad argument
+  if      (validstatus==1) msglog=("! Error packet args ["+ hexdump(message) +"]");        //bad argument
   else if (validstatus==2) msglog=("! error packet format" );//bad in packet
   else if (validstatus==3) msglog=("! unknown command: [" + command.toString(16) + "] packet N=" +dtnum ); //bad incoming packet
   else if (validstatus==4) msglog=("! error packet size:" + message.length +" for this command:[" + command.toString(16) + "]" + " packet N=" +dtnum  );        //bad incoming packet
   else if (validstatus==0)  {
     msglog=('* CMD Ok [' + command + ']' + " packet N=" +dtnum  ); //pck&arg Ok!   
-    startcommand(message,remote.address);    //   Synhro              <--------------------starter
- // myEmitter.emit('cmd');     // asynchro
+    var cmd=command;
+//    startcommand(message,remote.address);    //   Synhro              <--------------------starter
+    if (cmd==1 || cmd==0) myEmitter.emit('info',message);
+    if (cmd>1 && cmd<8) myEmitter.emit('az',message);
+    if (cmd>7 && cmd<14) myEmitter.emit('el',message);
+    if (command==14) myEmitter.emit('sys',message);
+//    myEmitter.emit('cmd',message);     // asynchro
   };
   consolelog(msglog +' from ' + remote.address + ':' + remote.port);
   /////
@@ -301,6 +306,38 @@ server.on('message', function (message, remote) {
   });
   ////////////  
 });//on.message
+
+//////// Event on command after validation&responce ///////
+///infostream
+myEmitter.on('info', (message) => {
+  var cmd=message[2];
+  consolelog('^ Event 4 infostream. command N'+(1+cmd)+"cmd("+cmd+")");
+  if (cmd==0){ }
+});
+
+///azimuth
+myEmitter.on('az', (message) => {
+  var cmd=message[2];
+  consolelog('^ Event 4 Azimuth. command N'+(1+cmd)+"cmd("+cmd+")");
+  if (cmd==0){ }
+});
+
+///elevation
+myEmitter.on('el', (message) => {
+  var cmd=message[2];
+  consolelog('^ Event 4 Elevation. command N'+(1+cmd)+"cmd("+cmd+")");
+  if (cmd==0){ }
+});
+
+///Change sys param
+myEmitter.on('sys', (message) => {
+  var cmd=message[2];
+  consolelog('^ Event Change sys param. command N'+(1+cmd)+"cmd("+cmd+")");
+  if (cmd==0){ }
+});
+
+////myEmitter.emit('cmd');
+////////////////////////////////
 
 // main: //////////////////////////////////////////
 server.bind(SERVERPORT, SERVERHOST, function(){});
