@@ -66,7 +66,7 @@ function xmove(can_address,speed) {
 
 var azimuth = {
   flag2stop: 0,
-  lag4start: 1,
+  flag4start: 1,
   movestate: 0,
   ts: 0,
   _angl: 0,
@@ -94,7 +94,7 @@ var azimuth = {
 
 var ele = {
   flag2stop: 0,
-  lag4start: 1,
+  flag4start: 1,
   movestate: 0,
   ts: 0,
   get angl(){
@@ -176,7 +176,7 @@ function validation(message){
     consolelog("<<cmd:"+cmd+" N="+npack+" coord="+ arg1+" speed="+ arg2);
     if (arg1<0 || arg1>1048576 || arg2<0 || arg2>1000) {consolelog("! error args");return 1;}
 //TODO softlimit
-    else if (){return 5}
+//    else if (arg1< || arg1>1048576){return 5}
   }
 ///////// command N4 (0x03) & command N10 (0x09)
   else if (cmd==3 || cmd==9) { 
@@ -214,7 +214,7 @@ function validation(message){
     arg4= (message[15]<<24) +(message[16]<<16) + (message[17]<<8) + message[18]; //
     arg5= (message[19]<<24) + (message[20]<<16) + (message[21]<<8)+ message[22]; //
     arg6= (message[23]<<24) + (message[24]<<16) + (message[25]<<8)+ message[26]; //
-    consolelog("<< cmd:"+cmd+" N="+npack+" az_ccw="+ arg1+"  az_cw="+ arg2+" el_down="+ arg3+" el_up="+ arg4 +" az_delta="+ arg5+" el_delta="+ arg6);
+    consolelog("<< cmd:"+cmd+" N="+npack+" az_cw="+ arg1+"  az_ccw="+ arg2+" el_down="+ arg3+" el_up="+ arg4 +" az_delta="+ arg5+" el_delta="+ arg6);
   //validation
     if (arg1<0 || arg1>1048576 || 
         arg2<0 || arg2>1048576 || 
@@ -341,6 +341,18 @@ myEmitter.on('az', (message) => {
 // correct obgect flag
 // stop prev event.
 // start new event uses object az as flag
+/*
+  az.flag2stop=0;
+
+
+  while (az.flag){};
+
+  az.flag4start=0;
+
+
+  while (!az.flag2stop){}
+  az.flag4start=1;
+*/
 });
 
 ///elevation
